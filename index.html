@@ -1,71 +1,101 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>OAD – Affichage Gare</title>
 
 <style>
+/* ===== BASE ===== */
 body {
   margin: 0;
   background: #0a1f33;
-  font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   color: white;
 }
 
+/* ===== HEADER ===== */
 header {
+  background: #062033;
+  padding: 20px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  background: #062033;
-  border-bottom: 3px solid #00bcd4;
+  border-bottom: 4px solid #00c8ff;
 }
 
 header h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 36px;
 }
 
 #clock {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: bold;
 }
 
-main {
+/* ===== MAIN ===== */
+.main {
   display: flex;
-  height: calc(100vh - 90px);
+  height: calc(100vh - 100px);
 }
 
-.table-zone {
+/* ===== TABLE ===== */
+.table-container {
   width: 70%;
   padding: 20px;
+  overflow: hidden;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 22px;
+  font-size: 24px;
 }
 
 th {
   background: #0d304a;
-  padding: 12px;
-  border-bottom: 3px solid #00bcd4;
+  padding: 14px;
+  text-align: left;
+  border-bottom: 3px solid #00c8ff;
 }
 
 td {
-  padding: 14px;
-  border-bottom: 1px solid #1b3a55;
+  padding: 16px;
+  border-bottom: 1px solid #1e405a;
 }
 
-.pub-zone {
+/* ===== STATUTS ===== */
+.statut-ok {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.statut-embarquement {
+  color: #FFC107;
+  font-weight: bold;
+}
+
+.statut-retard {
+  color: #F44336;
+  font-weight: bold;
+}
+
+.statut-parti {
+  color: #64B5F6;
+  font-weight: bold;
+}
+
+/* ===== PUB ===== */
+.pub {
   width: 30%;
   background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pub-zone img {
+.pub img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -77,84 +107,95 @@ td {
 
 <header>
   <h1>OAD – Affichage Gare</h1>
-  <div id="clock"></div>
+  <div id="clock">--:--</div>
 </header>
 
-<main>
-  <div class="table-zone">
-    <table id="table"></table>
+<div class="main">
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Numéro</th>
+          <th>Destination</th>
+          <th>Départ</th>
+          <th>Arrivée</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- données -->
+      </tbody>
+    </table>
   </div>
 
-  <div class="pub-zone">
-    <img id="pub">
+  <div class="pub">
+    <img src="https://images.unsplash.com/photo-1509749837427-ac94a2553d0e" alt="Bus">
   </div>
-</main>
+</div>
 
 <script>
-/* ================= CONFIG ================= */
+/* ===== CONFIG API ===== */
 const API_URL = "https://script.google.com/macros/s/AKfycbzoRceg8FEEolVN3RQ8bhZGmrLtzu6d2CSJrbGU4tXbU6qztmum7MZpdQLz1SiIqIdc/exec";
 
-/* ================= HORLOGE ================= */
-setInterval(() => {
-  document.getElementById("clock").innerText =
-    new Date().toLocaleTimeString();
-}, 1000);
+/* ===== FORMAT HEURE ===== */
+function formatHeure(dateString) {
+  if (!dateString) return "--:--";
+  const d = new Date(dateString);
+  return d.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
 
-/* ================= CHARGEMENT DONNÉES ================= */
+/* ===== STATUT CLASS ===== */
+function getStatutClass(statut) {
+  if (!statut) return "";
+  statut = statut.toLowerCase();
+
+  if (statut.includes("heure")) return "statut-ok";
+  if (statut.includes("embarquement")) return "statut-embarquement";
+  if (statut.includes("retard")) return "statut-retard";
+  if (statut.includes("parti")) return "statut-parti";
+
+  return "";
+}
+
+/* ===== LOAD DATA ===== */
 async function loadData() {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
-    renderTable(data);
-    rotatePub(data);
+
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    data.forEach(row => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${row.numero || ""}</td>
+        <td>${row.destination || ""}</td>
+        <td>${formatHeure(row.depart)}</td>
+        <td>${formatHeure(row.arrivee)}</td>
+        <td class="${getStatutClass(row.statut)}">${row.statut || ""}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
   } catch (e) {
-    console.error("Erreur API", e);
+    console.error("Erreur chargement données", e);
   }
 }
 
-function renderTable(data) {
-  let html = `
-    <tr>
-      <th>Numéro</th>
-      <th>Destination</th>
-      <th>Départ</th>
-      <th>Arrivée</th>
-      <th>Statut</th>
-    </tr>
-  `;
+/* ===== CLOCK ===== */
+setInterval(() => {
+  document.getElementById("clock").innerText =
+    new Date().toLocaleTimeString("fr-FR");
+}, 1000);
 
-  data.forEach(d => {
-    html += `
-      <tr>
-        <td>${d.numero}</td>
-        <td>${d.destination}</td>
-        <td>${d.depart}</td>
-        <td>${d.arrivee}</td>
-        <td>${d.statut}</td>
-      </tr>
-    `;
-  });
-
-  document.getElementById("table").innerHTML = html;
-}
-
-let pubIndex = 0;
-function rotatePub(data) {
-  const pubs = data
-    .map(d => d.puburl)
-    .filter(u => u && u.startsWith("http"));
-
-  if (!pubs.length) return;
-
-  document.getElementById("pub").src =
-    pubs[pubIndex % pubs.length];
-
-  pubIndex++;
-}
-
-/* ================= INIT ================= */
+/* ===== INIT ===== */
 loadData();
-setInterval(loadData, 20000);
+setInterval(loadData, 30000);
 </script>
 
 </body>
