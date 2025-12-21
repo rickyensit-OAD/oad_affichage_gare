@@ -5,6 +5,7 @@
 <title>OAD – Affichage Gare</title>
 
 <style>
+/* ===== BASE ===== */
 body {
   margin: 0;
   background: #0a1f33;
@@ -16,64 +17,91 @@ body {
 /* ===== HEADER ===== */
 header {
   background: #062033;
-  padding: 20px 30px;
+  padding: 2vh 2.5vw;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 4px solid #00c8ff;
+  border-bottom: 0.4vh solid #00c8ff;
+}
+
+/* ===== HEADER LEFT ===== */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+}
+
+.header-left img {
+  height: 6vh;
+  max-height: 60px;
 }
 
 header h1 {
   margin: 0;
-  font-size: 36px;
+  font-size: 3vw;
+}
+
+/* ===== HEADER RIGHT ===== */
+.header-right {
+  text-align: right;
 }
 
 #clock {
-  font-size: 32px;
+  font-size: 2.8vw;
   font-weight: bold;
+}
+
+#date {
+  font-size: 1.6vw;
+  opacity: 0.85;
 }
 
 /* ===== MAIN ===== */
 .main {
   display: flex;
-  height: calc(100vh - 160px);
+  height: calc(100vh - 14vh);
 }
 
-/* ===== TABLE ===== */
+/* ===== TABLE ZONE ===== */
 .table-zone {
-  width: 70%;
-  padding: 20px;
+  width: 65%;
+  padding: 2vh 2vw;
   display: flex;
   flex-direction: column;
 }
 
+/* ===== TABLE ===== */
 .table-header table,
 .table-body table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 24px;
+  font-size: 1.8vw;
 }
 
+/* ===== ALIGNEMENT COLONNES ===== */
 colgroup col:nth-child(1) { width: 15%; }
 colgroup col:nth-child(2) { width: 30%; }
 colgroup col:nth-child(3) { width: 15%; }
 colgroup col:nth-child(4) { width: 15%; }
 colgroup col:nth-child(5) { width: 25%; }
 
+/* ===== HEADER TABLE ===== */
 .table-header th {
   background: #0d304a;
-  padding: 14px;
-  border-bottom: 3px solid #00c8ff;
+  padding: 1.5vh 1vw;
+  border-bottom: 0.3vh solid #00c8ff;
   text-align: left;
 }
 
+/* ===== BODY SCROLL ===== */
 .table-body {
   flex: 1;
   overflow: hidden;
 }
 
 .table-body td {
-  padding: 16px;
+  padding: 1.2vh 1vw;
+  line-height: 1.4;
   border-bottom: 1px solid #1e405a;
 }
 
@@ -85,9 +113,10 @@ colgroup col:nth-child(5) { width: 25%; }
 
 /* ===== PUB ===== */
 .pub {
-  width: 30%;
+  width: 35%;
   background: black;
   position: relative;
+  overflow: hidden;
 }
 
 .pub img {
@@ -109,11 +138,11 @@ colgroup col:nth-child(5) { width: 25%; }
   position: fixed;
   bottom: 0;
   width: 100%;
-  height: 60px;
+  height: 6vh;
   background: #b30000;
   display: none;
   align-items: center;
-  font-size: 26px;
+  font-size: 2.2vw;
   font-weight: bold;
   overflow: hidden;
 }
@@ -134,8 +163,15 @@ colgroup col:nth-child(5) { width: 25%; }
 <body>
 
 <header>
-  <h1>OAD – Affichage Gare</h1>
-  <div id="clock">--:--</div>
+  <div class="header-left">
+    <img src="https://i.imgur.com/wy0J8ol.png" class="logo" alt="OAD Logo">
+    <h1>OAD – Affichage Gare</h1>
+  </div>
+
+  <div class="header-right">
+    <div id="clock">--:--</div>
+    <div id="date"></div>
+  </div>
 </header>
 
 <div class="main">
@@ -184,12 +220,25 @@ colgroup col:nth-child(5) { width: 25%; }
 </div>
 
 <script>
-/* ===== API GOOGLE SHEETS ===== */
+/* ===== API ===== */
 const API_URL = "https://script.google.com/macros/s/AKfycbxX654uOxSSdqiSrAnQVV2aShuteAY_XdLQmp4PDE1taDYnCkB5oGL2ot1R-XA2Kwzn/exec";
 
-/* ===== HORLOGE ===== */
+/* ===== HORLOGE + DATE ===== */
 setInterval(() => {
-  clock.innerText = new Date().toLocaleTimeString("fr-FR");
+  const now = new Date();
+
+  clock.innerText = now.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+
+  date.innerText = now.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  });
 }, 1000);
 
 /* ===== FORMAT HEURE ===== */
@@ -199,42 +248,26 @@ function formatHeure(v) {
   return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
-/* ===== CORRECTION CRITIQUE : HEURE DU JOUR ===== */
+/* ===== PARSE HEURE JOUR ===== */
 function parseTodayTime(value) {
   if (!value) return null;
-
   const d = new Date(value);
   if (!isNaN(d)) {
-    const today = new Date();
-    today.setHours(d.getHours(), d.getMinutes(), 0, 0);
-    return today;
+    const t = new Date();
+    t.setHours(d.getHours(), d.getMinutes(), 0, 0);
+    return t;
   }
-
-  if (typeof value === "string" && value.includes(":")) {
-    const [h, m] = value.split(":").map(Number);
-    const today = new Date();
-    today.setHours(h, m, 0, 0);
-    return today;
-  }
-
   return null;
 }
 
-/* ===== STATUT MÉTIER FINAL ===== */
+/* ===== STATUT ===== */
 function computeStatut(depart, manuel) {
-
-  if (manuel && manuel.toLowerCase().trim() === "retardé") {
-    return "Retardé";
-  }
-
-  const departDate = parseTodayTime(depart);
-  if (!departDate) return "";
-
-  const now = new Date();
-  const diffMinutes = (now - departDate) / 60000;
-
-  if (diffMinutes < 0) return "À l’heure";
-  if (diffMinutes >= 0 && diffMinutes < 20) return "Embarquement";
+  if (manuel && manuel.toLowerCase().trim() === "retardé") return "Retardé";
+  const dep = parseTodayTime(depart);
+  if (!dep) return "";
+  const diff = (new Date() - dep) / 60000;
+  if (diff < 0) return "À l’heure";
+  if (diff < 20) return "Embarquement";
   return "Parti";
 }
 
@@ -248,19 +281,22 @@ function getStatutClass(s) {
   return "";
 }
 
-/* ===== PUB ===== */
-let pubs = [], pubIndex = 0, showFirst = true;
+/* ===== PUB ROTATION ===== */
+let pubList = [];
+let pubIndex = 0;
+let showFirst = true;
 
 function rotatePub() {
-  if (!pubs.length) return;
+  if (!pubList.length) return;
   const a = pub1, b = pub2;
-  const img = pubs[pubIndex % pubs.length];
+  const img = pubList[pubIndex % pubList.length];
 
   if (showFirst) {
     b.src = img; b.classList.add("active"); a.classList.remove("active");
   } else {
     a.src = img; a.classList.add("active"); b.classList.remove("active");
   }
+
   showFirst = !showFirst;
   pubIndex++;
 }
@@ -271,7 +307,7 @@ async function loadData() {
   const data = await res.json();
 
   tableBody.innerHTML = "";
-  pubs = [];
+  pubList = [];
   let annonces = [];
 
   data.forEach(row => {
@@ -287,8 +323,16 @@ async function loadData() {
       </tr>
     `;
 
-    if (row.puburl) pubs.push(row.puburl);
-    if (row.annonces) annonces.push(row.annonces);
+    if (row.puburl) {
+      row.puburl.split(",").forEach(u => {
+        const url = u.trim();
+        if (url.startsWith("http")) pubList.push(url);
+      });
+    }
+
+    if (row.annonces) {
+      row.annonces.split("|||").forEach(a => annonces.push(a.trim()));
+    }
   });
 
   if (annonces.length) {
@@ -313,8 +357,9 @@ setInterval(() => {
 /* ===== INIT ===== */
 loadData();
 setInterval(loadData, 30000);
+
 rotatePub();
-setInterval(rotatePub, 10000);
+setInterval(rotatePub, 8000);
 </script>
 
 </body>
