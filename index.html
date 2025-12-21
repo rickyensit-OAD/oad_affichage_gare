@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
 <title>OAD – Affichage Gare</title>
 
 <style>
-/* ===== BASE ===== */
 body {
   margin: 0;
   background: #0a1f33;
   font-family: "Segoe UI", Arial, sans-serif;
   color: white;
+  overflow: hidden;
 }
 
 /* ===== HEADER ===== */
@@ -37,68 +36,97 @@ header h1 {
 /* ===== MAIN ===== */
 .main {
   display: flex;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 160px);
 }
 
 /* ===== TABLE ===== */
-.table-container {
+.table-zone {
   width: 70%;
   padding: 20px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-table {
+.table-header table,
+.table-body table {
   width: 100%;
   border-collapse: collapse;
   font-size: 24px;
 }
 
-th {
+colgroup col:nth-child(1) { width: 15%; }
+colgroup col:nth-child(2) { width: 30%; }
+colgroup col:nth-child(3) { width: 15%; }
+colgroup col:nth-child(4) { width: 15%; }
+colgroup col:nth-child(5) { width: 25%; }
+
+.table-header th {
   background: #0d304a;
   padding: 14px;
-  text-align: left;
   border-bottom: 3px solid #00c8ff;
+  text-align: left;
 }
 
-td {
+.table-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.table-body td {
   padding: 16px;
   border-bottom: 1px solid #1e405a;
 }
 
 /* ===== STATUTS ===== */
-.statut-ok {
-  color: #4CAF50;
-  font-weight: bold;
-}
-
-.statut-embarquement {
-  color: #FFC107;
-  font-weight: bold;
-}
-
-.statut-retard {
-  color: #F44336;
-  font-weight: bold;
-}
-
-.statut-parti {
-  color: #64B5F6;
-  font-weight: bold;
-}
+.statut-ok { color: #4CAF50; font-weight: bold; }
+.statut-embarquement { color: #FFC107; font-weight: bold; }
+.statut-retard { color: #F44336; font-weight: bold; }
+.statut-parti { color: #64B5F6; font-weight: bold; }
 
 /* ===== PUB ===== */
 .pub {
   width: 30%;
   background: black;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
 }
 
 .pub img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.pub img.active {
+  opacity: 1;
+}
+
+/* ===== TICKER ===== */
+.ticker {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 60px;
+  background: #b30000;
+  display: none;
+  align-items: center;
+  font-size: 26px;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+.ticker span {
+  white-space: nowrap;
+  padding-left: 100%;
+  animation: scrollText 25s linear infinite;
+}
+
+@keyframes scrollText {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
 }
 </style>
 </head>
@@ -111,91 +139,182 @@ td {
 </header>
 
 <div class="main">
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>Numéro</th>
-          <th>Destination</th>
-          <th>Départ</th>
-          <th>Arrivée</th>
-          <th>Statut</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <!-- données -->
-      </tbody>
-    </table>
+
+  <!-- TABLE -->
+  <div class="table-zone">
+
+    <div class="table-header">
+      <table>
+        <colgroup>
+          <col><col><col><col><col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Numéro</th>
+            <th>Destination</th>
+            <th>Départ</th>
+            <th>Arrivée</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+
+    <div class="table-body" id="tableBodyContainer">
+      <table>
+        <colgroup>
+          <col><col><col><col><col>
+        </colgroup>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
   </div>
 
+  <!-- PUB -->
   <div class="pub">
-    <img src="https://images.unsplash.com/photo-1509749837427-ac94a2553d0e" alt="Bus">
+    <img id="pub1" class="active">
+    <img id="pub2">
   </div>
+
+</div>
+
+<div class="ticker" id="ticker">
+  <span id="tickerText"></span>
 </div>
 
 <script>
-/* ===== CONFIG API ===== */
-const API_URL = "https://script.google.com/macros/s/AKfycbzoRceg8FEEolVN3RQ8bhZGmrLtzu6d2CSJrbGU4tXbU6qztmum7MZpdQLz1SiIqIdc/exec";
+/* ===== API GOOGLE SHEETS ===== */
+const API_URL = "https://script.google.com/macros/s/AKfycbxX654uOxSSdqiSrAnQVV2aShuteAY_XdLQmp4PDE1taDYnCkB5oGL2ot1R-XA2Kwzn/exec";
+
+/* ===== HORLOGE ===== */
+setInterval(() => {
+  clock.innerText = new Date().toLocaleTimeString("fr-FR");
+}, 1000);
 
 /* ===== FORMAT HEURE ===== */
-function formatHeure(dateString) {
-  if (!dateString) return "--:--";
-  const d = new Date(dateString);
-  return d.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+function formatHeure(v) {
+  if (!v) return "--:--";
+  const d = new Date(v);
+  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
-/* ===== STATUT CLASS ===== */
-function getStatutClass(statut) {
-  if (!statut) return "";
-  statut = statut.toLowerCase();
+/* ===== CORRECTION CRITIQUE : HEURE DU JOUR ===== */
+function parseTodayTime(value) {
+  if (!value) return null;
 
-  if (statut.includes("heure")) return "statut-ok";
-  if (statut.includes("embarquement")) return "statut-embarquement";
-  if (statut.includes("retard")) return "statut-retard";
-  if (statut.includes("parti")) return "statut-parti";
+  const d = new Date(value);
+  if (!isNaN(d)) {
+    const today = new Date();
+    today.setHours(d.getHours(), d.getMinutes(), 0, 0);
+    return today;
+  }
 
+  if (typeof value === "string" && value.includes(":")) {
+    const [h, m] = value.split(":").map(Number);
+    const today = new Date();
+    today.setHours(h, m, 0, 0);
+    return today;
+  }
+
+  return null;
+}
+
+/* ===== STATUT MÉTIER FINAL ===== */
+function computeStatut(depart, manuel) {
+
+  if (manuel && manuel.toLowerCase().trim() === "retardé") {
+    return "Retardé";
+  }
+
+  const departDate = parseTodayTime(depart);
+  if (!departDate) return "";
+
+  const now = new Date();
+  const diffMinutes = (now - departDate) / 60000;
+
+  if (diffMinutes < 0) return "À l’heure";
+  if (diffMinutes >= 0 && diffMinutes < 20) return "Embarquement";
+  return "Parti";
+}
+
+function getStatutClass(s) {
+  if (!s) return "";
+  s = s.toLowerCase();
+  if (s === "à l’heure") return "statut-ok";
+  if (s === "embarquement") return "statut-embarquement";
+  if (s === "retardé") return "statut-retard";
+  if (s === "parti") return "statut-parti";
   return "";
+}
+
+/* ===== PUB ===== */
+let pubs = [], pubIndex = 0, showFirst = true;
+
+function rotatePub() {
+  if (!pubs.length) return;
+  const a = pub1, b = pub2;
+  const img = pubs[pubIndex % pubs.length];
+
+  if (showFirst) {
+    b.src = img; b.classList.add("active"); a.classList.remove("active");
+  } else {
+    a.src = img; a.classList.add("active"); b.classList.remove("active");
+  }
+  showFirst = !showFirst;
+  pubIndex++;
 }
 
 /* ===== LOAD DATA ===== */
 async function loadData() {
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
+  const res = await fetch(API_URL);
+  const data = await res.json();
 
-    const tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
+  tableBody.innerHTML = "";
+  pubs = [];
+  let annonces = [];
 
-    data.forEach(row => {
-      const tr = document.createElement("tr");
+  data.forEach(row => {
+    const statutFinal = computeStatut(row.depart, row.statut);
 
-      tr.innerHTML = `
-        <td>${row.numero || ""}</td>
-        <td>${row.destination || ""}</td>
+    tableBody.innerHTML += `
+      <tr>
+        <td>${row.numero}</td>
+        <td>${row.destination}</td>
         <td>${formatHeure(row.depart)}</td>
         <td>${formatHeure(row.arrivee)}</td>
-        <td class="${getStatutClass(row.statut)}">${row.statut || ""}</td>
-      `;
+        <td class="${getStatutClass(statutFinal)}">${statutFinal}</td>
+      </tr>
+    `;
 
-      tbody.appendChild(tr);
-    });
-  } catch (e) {
-    console.error("Erreur chargement données", e);
+    if (row.puburl) pubs.push(row.puburl);
+    if (row.annonces) annonces.push(row.annonces);
+  });
+
+  if (annonces.length) {
+    ticker.style.display = "flex";
+    tickerText.innerText = annonces.join("   |||   ");
+  } else {
+    ticker.style.display = "none";
   }
 }
 
-/* ===== CLOCK ===== */
+/* ===== SCROLL ===== */
+let pos = 0, dir = 1;
 setInterval(() => {
-  document.getElementById("clock").innerText =
-    new Date().toLocaleTimeString("fr-FR");
-}, 1000);
+  const c = tableBodyContainer;
+  const max = c.scrollHeight - c.clientHeight;
+  if (max <= 0) return;
+  pos += dir * 0.4;
+  if (pos >= max || pos <= 0) dir *= -1;
+  c.scrollTop = pos;
+}, 30);
 
 /* ===== INIT ===== */
 loadData();
 setInterval(loadData, 30000);
+rotatePub();
+setInterval(rotatePub, 10000);
 </script>
 
 </body>
