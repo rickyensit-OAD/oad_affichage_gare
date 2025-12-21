@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>OAD – Affichage Gare</title>
+
+<style>
+body {
+  margin: 0;
+  background: #0a1f33;
+  font-family: Arial, sans-serif;
+  color: white;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #062033;
+  border-bottom: 3px solid #00bcd4;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+#clock {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+main {
+  display: flex;
+  height: calc(100vh - 90px);
+}
+
+.table-zone {
+  width: 70%;
+  padding: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 22px;
+}
+
+th {
+  background: #0d304a;
+  padding: 12px;
+  border-bottom: 3px solid #00bcd4;
+}
+
+td {
+  padding: 14px;
+  border-bottom: 1px solid #1b3a55;
+}
+
+.pub-zone {
+  width: 30%;
+  background: black;
+}
+
+.pub-zone img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>OAD – Affichage Gare</h1>
+  <div id="clock"></div>
+</header>
+
+<main>
+  <div class="table-zone">
+    <table id="table"></table>
+  </div>
+
+  <div class="pub-zone">
+    <img id="pub">
+  </div>
+</main>
+
+<script>
+/* ================= CONFIG ================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbzoRceg8FEEolVN3RQ8bhZGmrLtzu6d2CSJrbGU4tXbU6qztmum7MZpdQLz1SiIqIdc/exec";
+
+/* ================= HORLOGE ================= */
+setInterval(() => {
+  document.getElementById("clock").innerText =
+    new Date().toLocaleTimeString();
+}, 1000);
+
+/* ================= CHARGEMENT DONNÉES ================= */
+async function loadData() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    renderTable(data);
+    rotatePub(data);
+  } catch (e) {
+    console.error("Erreur API", e);
+  }
+}
+
+function renderTable(data) {
+  let html = `
+    <tr>
+      <th>Numéro</th>
+      <th>Destination</th>
+      <th>Départ</th>
+      <th>Arrivée</th>
+      <th>Statut</th>
+    </tr>
+  `;
+
+  data.forEach(d => {
+    html += `
+      <tr>
+        <td>${d.numero}</td>
+        <td>${d.destination}</td>
+        <td>${d.depart}</td>
+        <td>${d.arrivee}</td>
+        <td>${d.statut}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("table").innerHTML = html;
+}
+
+let pubIndex = 0;
+function rotatePub(data) {
+  const pubs = data
+    .map(d => d.puburl)
+    .filter(u => u && u.startsWith("http"));
+
+  if (!pubs.length) return;
+
+  document.getElementById("pub").src =
+    pubs[pubIndex % pubs.length];
+
+  pubIndex++;
+}
+
+/* ================= INIT ================= */
+loadData();
+setInterval(loadData, 20000);
+</script>
+
+</body>
+</html>
