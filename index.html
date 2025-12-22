@@ -238,11 +238,11 @@ function formatHeure(v) {
   return d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
 }
 
-/* ===== STATUT (CORRIGÉ) ===== */
+/* ===== STATUT AVEC ICÔNES (CORRIGÉ) ===== */
 function computeStatut(depart, manuel) {
 
   if (manuel && manuel.toLowerCase().trim() === "retardé") {
-    return "Retardé";
+    return " ⚠️ Retardé";
   }
 
   if (!depart) return "";
@@ -264,18 +264,18 @@ function computeStatut(depart, manuel) {
 
   const diffMinutes = (now - depToday) / 60000;
 
-  if (diffMinutes < 0) return "À l’heure";
-  if (diffMinutes < 20) return "Embarquement";
-  return "Parti";
+  if (diffMinutes < 0) return " ⏰ À l’heure";
+  if (diffMinutes < 20) return " 🚌 Embarquement";
+  return " ➡️ Parti";
 }
 
 function getStatutClass(s) {
-  return {
-    "à l’heure":"statut-ok",
-    "embarquement":"statut-embarquement",
-    "retardé":"statut-retard",
-    "parti":"statut-parti"
-  }[s?.toLowerCase()] || "";
+  if (!s) return "";
+  if (s.includes("À l’heure")) return "statut-ok";
+  if (s.includes("Embarquement")) return "statut-embarquement";
+  if (s.includes("Retardé")) return "statut-retard";
+  if (s.includes("Parti")) return "statut-parti";
+  return "";
 }
 
 /* ===== PUB ROTATION ===== */
