@@ -119,20 +119,24 @@ colgroup col:nth-child(5) { width: 25%; }
   overflow: hidden;
 }
 
-.pub img,
-.pub video {
+.pub img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0;
-  transition: opacity 1s ease-in-out;
+  display: none;
 }
 
-.pub img.active,
-.pub video.active {
-  opacity: 1;
+.pub video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  display: none;
 }
 
 /* ===== TICKER ===== */
@@ -207,8 +211,8 @@ colgroup col:nth-child(5) { width: 25%; }
 
   <!-- PUB -->
   <div class="pub">
-    <img id="pub1" class="active">
-    <img id="pub2">
+    <img id="pubImg1">
+    <img id="pubImg2">
     <video id="pubVideo" muted playsinline preload="auto"></video>
   </div>
 
@@ -256,33 +260,38 @@ function getStatutClass(s) {
   }[s?.toLowerCase()] || "";
 }
 
-/* ===== PUB ROTATION (IMAGES + VIDEO) ===== */
+/* ===== PUB ROTATION STABLE (IMAGE + VIDÉO) ===== */
 let pubItems = [];
 let pubIndex = 0;
-let toggleImg = true;
+let isVideoPlaying = false;
 
 function rotatePub() {
-  if (!pubItems.length) return;
+  if (!pubItems.length || isVideoPlaying) return;
 
-  pub1.classList.remove("active");
-  pub2.classList.remove("active");
-  pubVideo.classList.remove("active");
-  pubVideo.pause();
-
-  const item = pubItems[pubIndex % pubItems.length];
+  const media = pubItems[pubIndex % pubItems.length];
   pubIndex++;
 
-  if (item.endsWith(".mp4")) {
-    pubVideo.src = item;
+  pubImg1.style.display = "none";
+  pubImg2.style.display = "none";
+  pubVideo.style.display = "none";
+  pubVideo.pause();
+
+  if (media.endsWith(".mp4")) {
+    isVideoPlaying = true;
+    pubVideo.src = media;
     pubVideo.currentTime = 0;
-    pubVideo.classList.add("active");
+    pubVideo.style.display = "block";
     pubVideo.play().catch(()=>{});
-  } else {
-    const target = toggleImg ? pub1 : pub2;
-    target.src = item;
-    target.classList.add("active");
-    toggleImg = !toggleImg;
+
+    pubVideo.onended = () => {
+      isVideoPlaying = false;
+      rotatePub();
+    };
+    return;
   }
+
+  pubImg1.src = media;
+  pubImg1.style.display = "block";
 }
 
 /* ===== LOAD DATA ===== */
@@ -306,11 +315,15 @@ async function loadData() {
       </tr>
     `;
 
-    if (r.puburl) r.puburl.split(",").forEach(u=>{
-      if(u.trim().startsWith("http")) pubItems.push(u.trim());
-    });
+    if (r.puburl) {
+      r.puburl.split(",").forEach(u=>{
+        if(u.trim().startsWith("http")) pubItems.push(u.trim());
+      });
+    }
 
-    if (r.annonces) r.annonces.split("|||").forEach(a=>annonces.push(a.trim()));
+    if (r.annonces) {
+      r.annonces.split("|||").forEach(a=>annonces.push(a.trim()));
+    }
   });
 
   ticker.style.display = annonces.length ? "flex" : "none";
@@ -331,7 +344,6 @@ setInterval(()=>{
 /* ===== INIT ===== */
 loadData();
 setInterval(loadData,30000);
-rotatePub();
 setInterval(rotatePub,8000);
 </script>
 
