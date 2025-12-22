@@ -128,7 +128,6 @@ colgroup col:nth-child(5) { width: 25%; }
   display: none;
 }
 
-
 .pub video {
   position: absolute;
   top: 50%;
@@ -136,22 +135,10 @@ colgroup col:nth-child(5) { width: 25%; }
   width: 100%;
   height: 100%;
   transform: translate(-50%, -50%);
-  object-fit: contain;   /* ✅ affiche toute la vidéo */
-  background: black;     /* bandes noires propres si besoin */
+  object-fit: contain;
+  background: black;
   display: none;
 }
-
-
-/*.pub video {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  transform: translate(-50%, -50%);
-  object-fit: cover;
-  display: none;
-}*/
 
 /* ===== TICKER ===== */
 .ticker {
@@ -196,7 +183,6 @@ colgroup col:nth-child(5) { width: 25%; }
 
 <div class="main">
 
-  <!-- TABLE -->
   <div class="table-zone">
 
     <div class="table-header">
@@ -223,7 +209,6 @@ colgroup col:nth-child(5) { width: 25%; }
 
   </div>
 
-  <!-- PUB -->
   <div class="pub">
     <img id="pubImg1">
     <img id="pubImg2">
@@ -237,7 +222,6 @@ colgroup col:nth-child(5) { width: 25%; }
 </div>
 
 <script>
-/* ===== API ===== */
 const API_URL = "https://script.google.com/macros/s/AKfycbxX654uOxSSdqiSrAnQVV2aShuteAY_XdLQmp4PDE1taDYnCkB5oGL2ot1R-XA2Kwzn/exec";
 
 /* ===== HORLOGE + DATE ===== */
@@ -254,14 +238,34 @@ function formatHeure(v) {
   return d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
 }
 
-/* ===== STATUT ===== */
+/* ===== STATUT (CORRIGÉ) ===== */
 function computeStatut(depart, manuel) {
-  if (manuel && manuel.toLowerCase().trim() === "retardé") return "Retardé";
+
+  if (manuel && manuel.toLowerCase().trim() === "retardé") {
+    return "Retardé";
+  }
+
+  if (!depart) return "";
+
   const d = new Date(depart);
   if (isNaN(d)) return "";
-  const diff = (new Date() - d) / 60000;
-  if (diff < 0) return "À l’heure";
-  if (diff < 20) return "Embarquement";
+
+  const now = new Date();
+
+  const depToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    d.getHours(),
+    d.getMinutes(),
+    0,
+    0
+  );
+
+  const diffMinutes = (now - depToday) / 60000;
+
+  if (diffMinutes < 0) return "À l’heure";
+  if (diffMinutes < 20) return "Embarquement";
   return "Parti";
 }
 
@@ -274,7 +278,7 @@ function getStatutClass(s) {
   }[s?.toLowerCase()] || "";
 }
 
-/* ===== PUB ROTATION STABLE (IMAGE + VIDÉO) ===== */
+/* ===== PUB ROTATION ===== */
 let pubItems = [];
 let pubIndex = 0;
 let isVideoPlaying = false;
@@ -296,7 +300,6 @@ function rotatePub() {
     pubVideo.currentTime = 0;
     pubVideo.style.display = "block";
     pubVideo.play().catch(()=>{});
-
     pubVideo.onended = () => {
       isVideoPlaying = false;
       rotatePub();
@@ -319,6 +322,7 @@ async function loadData() {
 
   data.forEach(r => {
     const statut = computeStatut(r.depart, r.statut);
+
     tableBody.innerHTML += `
       <tr>
         <td>${r.numero}</td>
