@@ -126,6 +126,13 @@ colgroup col:nth-child(5) { width: 25%; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.pub img.active,
+.pub video.active {
+  opacity: 1;
 }
 
 /* ===== TICKER ===== */
@@ -199,7 +206,11 @@ colgroup col:nth-child(5) { width: 25%; }
   </div>
 
   <!-- PUB -->
-  <div class="pub" id="pubZone"></div>
+  <div class="pub">
+    <img id="pub1" class="active">
+    <img id="pub2">
+    <video id="pubVideo" muted playsinline preload="auto"></video>
+  </div>
 
 </div>
 
@@ -214,80 +225,63 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxX654uOxSSdqiSrAnQVV2a
 /* ===== HORLOGE + DATE ===== */
 setInterval(() => {
   const now = new Date();
-  clock.innerText = now.toLocaleTimeString("fr-FR");
-  date.innerText = now.toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric"
-  });
+  clock.innerText = now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  date.innerText = now.toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
 }, 1000);
 
 /* ===== FORMAT HEURE ===== */
 function formatHeure(v) {
   if (!v) return "--:--";
   const d = new Date(v);
-  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-}
-
-/* ===== PARSE HEURE JOUR ===== */
-function parseTodayTime(value) {
-  if (!value) return null;
-  const d = new Date(value);
-  if (!isNaN(d)) {
-    const t = new Date();
-    t.setHours(d.getHours(), d.getMinutes(), 0, 0);
-    return t;
-  }
-  return null;
+  return d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
 }
 
 /* ===== STATUT ===== */
 function computeStatut(depart, manuel) {
   if (manuel && manuel.toLowerCase().trim() === "retardé") return "Retardé";
-  const dep = parseTodayTime(depart);
-  if (!dep) return "";
-  const diff = (new Date() - dep) / 60000;
+  const d = new Date(depart);
+  if (isNaN(d)) return "";
+  const diff = (new Date() - d) / 60000;
   if (diff < 0) return "À l’heure";
   if (diff < 20) return "Embarquement";
   return "Parti";
 }
 
 function getStatutClass(s) {
-  if (!s) return "";
-  s = s.toLowerCase();
-  if (s === "à l’heure") return "statut-ok";
-  if (s === "embarquement") return "statut-embarquement";
-  if (s === "retardé") return "statut-retard";
-  if (s === "parti") return "statut-parti";
-  return "";
+  return {
+    "à l’heure":"statut-ok",
+    "embarquement":"statut-embarquement",
+    "retardé":"statut-retard",
+    "parti":"statut-parti"
+  }[s?.toLowerCase()] || "";
 }
 
-/* ===== PUB MIXTE (IMAGES + VIDÉO) ===== */
-let pubMedia = [];
+/* ===== PUB ROTATION (IMAGES + VIDEO) ===== */
+let pubItems = [];
 let pubIndex = 0;
-let pubTimer = null;
+let toggleImg = true;
 
-function showNextPub() {
-  pubZone.innerHTML = "";
-  if (!pubMedia.length) return;
+function rotatePub() {
+  if (!pubItems.length) return;
 
-  const media = pubMedia[pubIndex % pubMedia.length];
+  pub1.classList.remove("active");
+  pub2.classList.remove("active");
+  pubVideo.classList.remove("active");
+  pubVideo.pause();
+
+  const item = pubItems[pubIndex % pubItems.length];
   pubIndex++;
 
-  if (media.match(/\.(mp4|webm)$/i)) {
-    const video = document.createElement("video");
-    video.src = media;
-    video.autoplay = true;
-    video.muted = true;
-    video.playsInline = true;
-    video.onended = showNextPub;
-    pubZone.appendChild(video);
+  if (item.endsWith(".mp4")) {
+    pubVideo.src = item;
+    pubVideo.currentTime = 0;
+    pubVideo.classList.add("active");
+    pubVideo.play().catch(()=>{});
   } else {
-    const img = document.createElement("img");
-    img.src = media;
-    pubZone.appendChild(img);
-    pubTimer = setTimeout(showNextPub, 8000);
+    const target = toggleImg ? pub1 : pub2;
+    target.src = item;
+    target.classList.add("active");
+    toggleImg = !toggleImg;
   }
 }
 
@@ -297,58 +291,48 @@ async function loadData() {
   const data = await res.json();
 
   tableBody.innerHTML = "";
-  pubMedia = [];
+  pubItems = [];
   let annonces = [];
 
-  data.forEach(row => {
-    const statutFinal = computeStatut(row.depart, row.statut);
-
+  data.forEach(r => {
+    const statut = computeStatut(r.depart, r.statut);
     tableBody.innerHTML += `
       <tr>
-        <td>${row.numero}</td>
-        <td>${row.destination}</td>
-        <td>${formatHeure(row.depart)}</td>
-        <td>${formatHeure(row.arrivee)}</td>
-        <td class="${getStatutClass(statutFinal)}">${statutFinal}</td>
+        <td>${r.numero}</td>
+        <td>${r.destination}</td>
+        <td>${formatHeure(r.depart)}</td>
+        <td>${formatHeure(r.arrivee)}</td>
+        <td class="${getStatutClass(statut)}">${statut}</td>
       </tr>
     `;
 
-    if (row.puburl) {
-      row.puburl.split(",").forEach(u => {
-        const url = u.trim();
-        if (url.startsWith("http")) pubMedia.push(url);
-      });
-    }
+    if (r.puburl) r.puburl.split(",").forEach(u=>{
+      if(u.trim().startsWith("http")) pubItems.push(u.trim());
+    });
 
-    if (row.annonces) {
-      row.annonces.split("|||").forEach(a => annonces.push(a.trim()));
-    }
+    if (r.annonces) r.annonces.split("|||").forEach(a=>annonces.push(a.trim()));
   });
 
-  if (annonces.length) {
-    ticker.style.display = "flex";
-    tickerText.innerText = annonces.join("   |||   ");
-  } else {
-    ticker.style.display = "none";
-  }
-
-  showNextPub();
+  ticker.style.display = annonces.length ? "flex" : "none";
+  tickerText.innerText = annonces.join("   |||   ");
 }
 
-/* ===== SCROLL ===== */
-let pos = 0, dir = 1;
-setInterval(() => {
-  const c = tableBodyContainer;
-  const max = c.scrollHeight - c.clientHeight;
-  if (max <= 0) return;
-  pos += dir * 0.4;
-  if (pos >= max || pos <= 0) dir *= -1;
-  c.scrollTop = pos;
-}, 30);
+/* ===== SCROLL TABLE ===== */
+let pos=0,dir=1;
+setInterval(()=>{
+  const c=tableBodyContainer;
+  const max=c.scrollHeight-c.clientHeight;
+  if(max<=0)return;
+  pos+=dir*0.4;
+  if(pos>=max||pos<=0)dir*=-1;
+  c.scrollTop=pos;
+},30);
 
 /* ===== INIT ===== */
 loadData();
-setInterval(loadData, 30000);
+setInterval(loadData,30000);
+rotatePub();
+setInterval(rotatePub,8000);
 </script>
 
 </body>
