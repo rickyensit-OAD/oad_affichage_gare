@@ -180,6 +180,34 @@ colgroup col:nth-child(5) { width: 25%; }
   padding-left: 1.5vw;
 }
 /* ===== FIN DESTINATION STYLE GARE (ALTERNÉ) ===== */
+
+
+/* ===== NUMÉRO STYLE GARE (COULEURS ALTERNÉES) ===== */
+.table-body td:nth-child(1) {
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.7vw;
+  color: #ffffff;
+  border-radius: 0.4vw;
+}
+
+/* Bleu */
+.table-body tr:nth-child(3n+1) td:nth-child(1) {
+  background: linear-gradient(180deg, #1e88e5, #0d47a1);
+}
+
+/* Jaune */
+.table-body tr:nth-child(3n+2) td:nth-child(1) {
+  background: linear-gradient(180deg, #fdd835, #f9a825);
+  color: #000000;
+}
+
+/* Rouge */
+.table-body tr:nth-child(3n+3) td:nth-child(1) {
+  background: linear-gradient(180deg, #e53935, #b71c1c);
+}
+
+
 </style>
 </head>
 
