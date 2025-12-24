@@ -111,6 +111,32 @@ colgroup col:nth-child(5) { width: 25%; }
 .statut-retard { color: #F44336; font-weight: bold; }
 .statut-parti { color: #64B5F6; font-weight: bold; }
 
+/* ===== COLONNE NUMÉRO (numéro + logo) ===== */
+.table-body td:nth-child(1) {
+  background: #0d2538;
+  border-radius: 0.3vw;
+}
+
+.line-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+}
+
+.line-number {
+  font-size: 1.8vw;
+  font-weight: 800;
+  color: #eaeaea;
+  min-width: 4vw;
+  text-align: right;
+}
+
+.line-logo {
+  max-height: 3.5vh;
+  max-width: 5vw;
+  object-fit: contain;
+}
+
 /* ===== PUB ===== */
 .pub {
   width: 35%;
@@ -119,24 +145,13 @@ colgroup col:nth-child(5) { width: 25%; }
   overflow: hidden;
 }
 
-/* IMAGES PUB — affichage complet */
-.pub img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;   /* ✅ image affichée en entier */
-  background: black;
-  display: none;
-}
-
-/* VIDEOS PUB — affichage complet */
+.pub img,
 .pub video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;   /* ✅ vidéo affichée en entier */
+  object-fit: contain;
   background: black;
   display: none;
 }
@@ -176,26 +191,6 @@ colgroup col:nth-child(5) { width: 25%; }
   font-weight: 600;
   padding-left: 1.5vw;
 }
-
-/* ===== NUMÉRO STYLE ===== */
-.table-body td:nth-child(1) {
-  text-align: center;
-  font-weight: 800;
-  font-size: 1.7vw;
-  color: #ffffff;
-  border-radius: 0.4vw;
-}
-
-.table-body tr:nth-child(3n+1) td:nth-child(1) {
-  background: linear-gradient(180deg, #1e88e5, #0d47a1);
-}
-.table-body tr:nth-child(3n+2) td:nth-child(1) {
-  background: linear-gradient(180deg, #fdd835, #f9a825);
-  color: #000;
-}
-.table-body tr:nth-child(3n+3) td:nth-child(1) {
-  background: linear-gradient(180deg, #e53935, #b71c1c);
-}
 </style>
 </head>
 
@@ -206,6 +201,7 @@ colgroup col:nth-child(5) { width: 25%; }
     <img src="https://imgur.com/z2Eg5pp.png" alt="OAD Logo">
     <h1>Départs – Gare OAD – Abidjan</h1>
   </div>
+
   <div class="header-right">
     <div id="clock">--:--</div>
     <div id="date"></div>
@@ -251,7 +247,7 @@ colgroup col:nth-child(5) { width: 25%; }
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxX654uOxSSdqiSrAnQVV2aShuteAY_XdLQmp4PDE1taDYnCkB5oGL2ot1R-XA2Kwzn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz9sLPncRN3NVYTsZAcg3sNJCqyvwB02appfjPx0TPMjSpai0Ssjw1dzdbZ3ABq8_T-/exec";
 
 /* ===== HORLOGE + DATE ===== */
 setInterval(() => {
@@ -337,7 +333,12 @@ async function loadData() {
 
     tableBody.innerHTML += `
       <tr>
-        <td>${r.numero}</td>
+        <td>
+          <div class="line-cell">
+            <span class="line-number">${r.numero}</span>
+            <img class="line-logo" src="${r.logo || 'https://via.placeholder.com/120x60?text=LOGO'}" alt="Logo compagnie">
+          </div>
+        </td>
         <td>${r.destination}</td>
         <td>${formatHeure(r.depart)}</td>
         <td>${formatHeure(r.arrivee)}</td>
@@ -361,15 +362,15 @@ async function loadData() {
 }
 
 /* ===== SCROLL TABLE ===== */
-let pos=0,dir=1;
-setInterval(()=>{
-  const c=tableBodyContainer;
-  const max=c.scrollHeight-c.clientHeight;
-  if(max<=0)return;
-  pos+=dir*0.4;
-  if(pos>=max||pos<=0)dir*=-1;
-  c.scrollTop=pos;
-},30);
+let pos = 0, dir = 1;
+setInterval(() => {
+  const c = tableBodyContainer;
+  const max = c.scrollHeight - c.clientHeight;
+  if (max <= 0) return;
+  pos += dir * 0.4;   /* ✅ CORRECTION ICI */
+  if (pos >= max || pos <= 0) dir *= -1;
+  c.scrollTop = pos;
+}, 30);
 
 /* ===== INIT ===== */
 loadData();
