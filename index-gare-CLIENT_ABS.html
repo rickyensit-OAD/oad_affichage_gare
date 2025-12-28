@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>ABS – Affichage Gare – ABIDJAN</title>
+
+<style>
+/* ===== BASE ===== */
+body {
+  margin: 0;
+  background: #0a1f33;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: white;
+  overflow: hidden;
+}
+
+/* ===== HEADER ===== */
+header {
+  background: #062033;
+  padding: 2vh 2.5vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 0.4vh solid #00c8ff;
+}
+
+/* ===== HEADER LEFT ===== */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+}
+
+.header-left img {
+  height: 6vh;
+  max-height: 60px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 3vw;
+}
+
+/* ===== HEADER RIGHT ===== */
+.header-right {
+  text-align: right;
+}
+
+#clock {
+  font-size: 2.8vw;
+  font-weight: bold;
+}
+
+#date {
+  font-size: 1.6vw;
+  opacity: 0.85;
+}
+
+/* ===== MAIN ===== */
+.main {
+  display: flex;
+  height: calc(100vh - 14vh);
+}
+
+/* ===== TABLE ZONE ===== */
+.table-zone {
+  width: 65%;
+  padding: 2vh 2vw;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TABLE ===== */
+.table-header table,
+.table-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.8vw;
+}
+
+/* ===== ALIGNEMENT COLONNES ===== */
+colgroup col:nth-child(1) { width: 15%; }
+colgroup col:nth-child(2) { width: 30%; }
+colgroup col:nth-child(3) { width: 15%; }
+colgroup col:nth-child(4) { width: 15%; }
+colgroup col:nth-child(5) { width: 25%; }
+
+/* ===== HEADER TABLE ===== */
+.table-header th {
+  background: #0d304a;
+  padding: 1.5vh 1vw;
+  border-bottom: 0.3vh solid #00c8ff;
+  text-align: left;
+}
+
+/* ===== BODY SCROLL ===== */
+.table-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.table-body td {
+  padding: 1.2vh 1vw;
+  line-height: 1.4;
+  border-bottom: 1px solid #1e405a;
+}
+
+/* ===== STATUTS ===== */
+.statut-ok { color: #4CAF50; font-weight: bold; }
+.statut-embarquement { color: #FFC107; font-weight: bold; }
+.statut-retard { color: #F44336; font-weight: bold; }
+.statut-parti { color: #64B5F6; font-weight: bold; }
+
+/* ===== COLONNE NUMÉRO (numéro + logo) ===== */
+.table-body td:nth-child(1) {
+  background: #0d2538;
+  border-radius: 0.3vw;
+}
+
+.line-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+}
+
+.line-number {
+  font-size: 1.8vw;
+  font-weight: 800;
+  color: #eaeaea;
+  min-width: 4vw;
+  text-align: right;
+}
+
+.line-logo {
+  max-height: 3.5vh;
+  max-width: 5vw;
+  object-fit: contain;
+}
+
+/* ===== PUB ===== */
+.pub {
+  width: 35%;
+  background: black;
+  position: relative;
+  overflow: hidden;
+}
+
+.pub img,
+.pub video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: black;
+  display: none;
+}
+
+/* ===== TICKER ===== */
+.ticker {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 6vh;
+  background: #b30000;
+  display: none;
+  align-items: center;
+  font-size: 2.2vw;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+.ticker span {
+  white-space: nowrap;
+  padding-left: 100%;
+  animation: scrollText 25s linear infinite;
+}
+
+@keyframes scrollText {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+/* ===== DESTINATION STYLE ===== */
+.table-body tr:nth-child(odd) td:nth-child(2) {
+  background-color: #1e405a;
+}
+
+.table-body td:nth-child(2) {
+  color: #ffffff;
+  font-weight: 600;
+  padding-left: 1.5vw;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-left">
+    <img src="https://imgur.com/z2Eg5pp.png" alt="OAD Logo">
+    <h1>Départs – Gare ABS – Abidjan</h1>
+  </div>
+
+  <div class="header-right">
+    <div id="clock">--:--</div>
+    <div id="date"></div>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="table-zone">
+    <div class="table-header">
+      <table>
+        <colgroup><col><col><col><col><col></colgroup>
+        <thead>
+          <tr>
+            <th>Numéro</th>
+            <th>Destination</th>
+            <th>Départ</th>
+            <th>Arrivée</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+
+    <div class="table-body" id="tableBodyContainer">
+      <table>
+        <colgroup><col><col><col><col><col></colgroup>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="pub">
+    <img id="pubImg1">
+    <img id="pubImg2">
+    <video id="pubVideo" muted playsinline preload="auto"></video>
+  </div>
+
+</div>
+
+<div class="ticker" id="ticker">
+  <span id="tickerText"></span>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbzzDUzNzcXspQ1OBfR1oGDS7ieG1ZOFhBGrDyxiQC6M0rLH_y11x31oZLCzyEKyrb4A/exec";
+
+/* ===== HORLOGE + DATE ===== */
+setInterval(() => {
+  const now = new Date();
+  clock.innerText = now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  date.innerText = now.toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+}, 1000);
+
+/* ===== FORMAT HEURE ===== */
+function formatHeure(v) {
+  if (!v) return "--:--";
+  const d = new Date(v);
+  return d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+}
+
+/* ===== STATUT ===== */
+function computeStatut(depart, manuel) {
+  if (manuel && manuel.toLowerCase().trim() === "retardé") return " ⚠️ Retardé";
+  if (!depart) return "";
+  const d = new Date(depart);
+  if (isNaN(d)) return "";
+  const now = new Date();
+  const depToday = new Date(now.getFullYear(),now.getMonth(),now.getDate(),d.getHours(),d.getMinutes());
+  const diff = (now - depToday) / 60000;
+  if (diff < 0) return " ⏰ À l’heure";
+  if (diff < 20) return " 🚌 Embarquement";
+  return " ➡️ Parti";
+}
+
+function getStatutClass(s) {
+  if (!s) return "";
+  if (s.includes("À l’heure")) return "statut-ok";
+  if (s.includes("Embarquement")) return "statut-embarquement";
+  if (s.includes("Retardé")) return "statut-retard";
+  if (s.includes("Parti")) return "statut-parti";
+  return "";
+}
+
+/* ===== PUB ROTATION ===== */
+let pubItems = [];
+let pubIndex = 0;
+let isVideoPlaying = false;
+
+function rotatePub() {
+  if (!pubItems.length || isVideoPlaying) return;
+
+  const media = pubItems[pubIndex % pubItems.length];
+  pubIndex++;
+
+  pubImg1.style.display = "none";
+  pubImg2.style.display = "none";
+  pubVideo.style.display = "none";
+  pubVideo.pause();
+
+  if (media.endsWith(".mp4")) {
+    isVideoPlaying = true;
+    pubVideo.src = media;
+    pubVideo.currentTime = 0;
+    pubVideo.style.display = "block";
+    pubVideo.play().catch(()=>{});
+    pubVideo.onended = () => {
+      isVideoPlaying = false;
+      rotatePub();
+    };
+    return;
+  }
+
+  pubImg1.src = media;
+  pubImg1.style.display = "block";
+}
+
+/* ===== LOAD DATA ===== */
+async function loadData() {
+  const res = await fetch(API_URL);
+  const data = await res.json();
+
+  tableBody.innerHTML = "";
+  pubItems = [];
+  let annonces = [];
+
+  data.forEach(r => {
+    const statut = computeStatut(r.depart, r.statut);
+
+    tableBody.innerHTML += `
+      <tr>
+        <td>
+          <div class="line-cell">
+            <span class="line-number">${r.numero}</span>
+            <img class="line-logo" src="${r.logo || 'https://via.placeholder.com/120x60?text=LOGO'}" alt="Logo compagnie">
+          </div>
+        </td>
+        <td>${r.destination}</td>
+        <td>${formatHeure(r.depart)}</td>
+        <td>${formatHeure(r.arrivee)}</td>
+        <td class="${getStatutClass(statut)}">${statut}</td>
+      </tr>
+    `;
+
+    if (r.puburl) {
+      r.puburl.split(",").forEach(u=>{
+        if(u.trim().startsWith("http")) pubItems.push(u.trim());
+      });
+    }
+
+    if (r.annonces) {
+      r.annonces.split("|||").forEach(a=>annonces.push(a.trim()));
+    }
+  });
+
+  ticker.style.display = annonces.length ? "flex" : "none";
+  tickerText.innerText = annonces.join("   |||   ");
+}
+
+/* ===== SCROLL TABLE ===== */
+let pos = 0, dir = 1;
+setInterval(() => {
+  const c = tableBodyContainer;
+  const max = c.scrollHeight - c.clientHeight;
+  if (max <= 0) return;
+  pos += dir * 0.4;   /* ✅ CORRECTION ICI */
+  if (pos >= max || pos <= 0) dir *= -1;
+  c.scrollTop = pos;
+}, 30);
+
+/* ===== INIT ===== */
+loadData();
+setInterval(loadData,30000);
+setInterval(rotatePub,8000);
+</script>
+
+</body>
+</html>
