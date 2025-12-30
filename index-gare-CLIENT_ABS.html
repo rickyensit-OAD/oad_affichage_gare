@@ -111,7 +111,7 @@ colgroup col:nth-child(5) { width: 25%; }
 .statut-retard { color: #F44336; font-weight: bold; }
 .statut-parti { color: #64B5F6; font-weight: bold; }
 
-/* ===== COLONNE NUMÉRO (numéro + logo) ===== */
+/* ===== COLONNE NUMÉRO ===== */
 .table-body td:nth-child(1) {
   background: #0d2538;
   border-radius: 0.3vw;
@@ -213,7 +213,6 @@ colgroup col:nth-child(5) { width: 25%; }
   <div class="table-zone">
     <div class="table-header">
       <table>
-        <colgroup><col><col><col><col><col></colgroup>
         <thead>
           <tr>
             <th>Numéro</th>
@@ -228,7 +227,6 @@ colgroup col:nth-child(5) { width: 25%; }
 
     <div class="table-body" id="tableBodyContainer">
       <table>
-        <colgroup><col><col><col><col><col></colgroup>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
@@ -247,30 +245,26 @@ colgroup col:nth-child(5) { width: 25%; }
 </div>
 
 <script>
-/*const API_URL = "https://script.google.com/macros/s/AKfycbwI0k_PFaL5qff1OxUESG1sw3NRpYerew-Dg7OqbOxD3oPhej82-nrAzE_PJzSg1FHO/exec";*/
+/* ===== API SÉCURISÉE ===== */
 const API_URL =
-  "https://script.google.com/macros/s/XXXXX/exec"
+  "https://script.google.com/macros/s/AKfycbwI0k_PFaL5qff1OxUESG1sw3NRpYerew-Dg7OqbOxD3oPhej82-nrAzE_PJzSg1FHO/exec"
   + "?screen=CX_ABJ_01"
-  + "&token=xxx";
+  + "&token=f9a3KX92_ABS_ABJ_2025";
 
-
-
-
-/* ===== HORLOGE + DATE ===== */
+/* ===== HORLOGE ===== */
 setInterval(() => {
   const now = new Date();
   clock.innerText = now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
   date.innerText = now.toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
 }, 1000);
 
-/* ===== FORMAT HEURE ===== */
+/* ===== OUTILS ===== */
 function formatHeure(v) {
   if (!v) return "--:--";
   const d = new Date(v);
   return d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
 }
 
-/* ===== STATUT ===== */
 function computeStatut(depart, manuel) {
   if (manuel && manuel.toLowerCase().trim() === "retardé") return " ⚠️ Retardé";
   if (!depart) return "";
@@ -293,43 +287,42 @@ function getStatutClass(s) {
   return "";
 }
 
-/* ===== PUB ROTATION ===== */
+/* ===== PUB ===== */
 let pubItems = [];
 let pubIndex = 0;
 let isVideoPlaying = false;
 
 function rotatePub() {
   if (!pubItems.length || isVideoPlaying) return;
-
-  const media = pubItems[pubIndex % pubItems.length];
-  pubIndex++;
-
-  pubImg1.style.display = "none";
-  pubImg2.style.display = "none";
-  pubVideo.style.display = "none";
+  const media = pubItems[pubIndex++ % pubItems.length];
+  pubImg1.style.display = pubImg2.style.display = pubVideo.style.display = "none";
   pubVideo.pause();
 
   if (media.endsWith(".mp4")) {
     isVideoPlaying = true;
     pubVideo.src = media;
-    pubVideo.currentTime = 0;
     pubVideo.style.display = "block";
     pubVideo.play().catch(()=>{});
-    pubVideo.onended = () => {
-      isVideoPlaying = false;
-      rotatePub();
-    };
+    pubVideo.onended = () => { isVideoPlaying = false; rotatePub(); };
+  } else {
+    pubImg1.src = media;
+    pubImg1.style.display = "block";
+  }
+}
+
+/* ===== LOAD DATA (CORRIGÉ) ===== */
+async function loadData() {
+  const res = await fetch(API_URL);
+  const json = await res.json();
+
+  if (json.error) {
+    tableBody.innerHTML = "";
+    ticker.style.display = "none";
+    console.warn("Accès refusé :", json.error);
     return;
   }
 
-  pubImg1.src = media;
-  pubImg1.style.display = "block";
-}
-
-/* ===== LOAD DATA ===== */
-async function loadData() {
-  const res = await fetch(API_URL);
-  const data = await res.json();
+  const data = json.data;
 
   tableBody.innerHTML = "";
   pubItems = [];
@@ -343,7 +336,7 @@ async function loadData() {
         <td>
           <div class="line-cell">
             <span class="line-number">${r.numero}</span>
-            <img class="line-logo" src="${r.logo || 'https://via.placeholder.com/120x60?text=LOGO'}" alt="Logo compagnie">
+            <img class="line-logo" src="${r.logo || 'https://via.placeholder.com/120x60?text=LOGO'}">
           </div>
         </td>
         <td>${r.destination}</td>
@@ -353,36 +346,29 @@ async function loadData() {
       </tr>
     `;
 
-    if (r.puburl) {
-      r.puburl.split(",").forEach(u=>{
-        if(u.trim().startsWith("http")) pubItems.push(u.trim());
-      });
-    }
-
-    if (r.annonces) {
-      r.annonces.split("|||").forEach(a=>annonces.push(a.trim()));
-    }
+    if (r.puburl) r.puburl.split(",").forEach(u => pubItems.push(u.trim()));
+    if (r.annonces) r.annonces.split("|||").forEach(a => annonces.push(a.trim()));
   });
 
   ticker.style.display = annonces.length ? "flex" : "none";
   tickerText.innerText = annonces.join("   |||   ");
 }
 
-/* ===== SCROLL TABLE ===== */
+/* ===== SCROLL ===== */
 let pos = 0, dir = 1;
 setInterval(() => {
   const c = tableBodyContainer;
   const max = c.scrollHeight - c.clientHeight;
   if (max <= 0) return;
-  pos += dir * 0.4;   /* ✅ CORRECTION ICI */
+  pos += dir * 0.4;
   if (pos >= max || pos <= 0) dir *= -1;
   c.scrollTop = pos;
 }, 30);
 
 /* ===== INIT ===== */
 loadData();
-setInterval(loadData,30000);
-setInterval(rotatePub,8000);
+setInterval(loadData, 30000);
+setInterval(rotatePub, 8000);
 </script>
 
 </body>
