@@ -2,98 +2,177 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>OAD – Admin Départs</title>
+<title>OAD – Interface Admin Départs</title>
+
 <style>
-body{font-family:Arial;background:#0a1f33;color:white;padding:20px}
-table{width:100%;border-collapse:collapse;margin-top:20px}
-th,td{border:1px solid #1e405a;padding:8px}
-th{background:#0d304a}
-input,button{padding:6px;margin:4px}
+body{
+  font-family: Arial, sans-serif;
+  background:#0a1f33;
+  color:white;
+  padding:20px;
+}
+h1,h2{
+  margin-top:0;
+}
+button{
+  padding:6px 12px;
+  margin:4px;
+  cursor:pointer;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+th,td{
+  border:1px solid #1e405a;
+  padding:8px;
+  text-align:left;
+}
+th{
+  background:#0d304a;
+}
+input{
+  width:100%;
+  padding:6px;
+  margin:5px 0;
+}
+.form{
+  max-width:500px;
+}
+hr{
+  margin:20px 0;
+  border:0;
+  border-top:1px solid #1e405a;
+}
+.actif-btn{
+  cursor:pointer;
+}
 </style>
 </head>
+
 <body>
 
-<h1>Admin – Départs</h1>
+<h1>Interface Admin – Départs</h1>
 
 <button onclick="load()">🔄 Rafraîchir</button>
 
 <table id="tbl"></table>
 
-<h2>Ajouter</h2>
-<input id="num" placeholder="Numéro">
-<input id="dest" placeholder="Destination">
-<input id="dep" type="time">
-<input id="arr" type="time">
-<button onclick="add()">Ajouter</button>
+<hr>
+
+<h2>➕ Ajouter un départ</h2>
+
+<div class="form">
+  <input id="numero" placeholder="Numéro (ex: D20)">
+  <input id="destination" placeholder="Destination">
+  <input id="depart" type="time">
+  <input id="arrivee" type="time">
+  <button onclick="add()">Ajouter</button>
+</div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycby21m6B1gyF6-6PJdUl0XqidQlT73SGoh4P7ZpJxfw-MEVpdKfabIES5mI8awFtqOkH/exec";
+// 🔴 URL OBLIGATOIRE DE L’API APPS SCRIPT
+const API_URL = "https://script.google.com/macros/s/AKfycbxlCRrFOMA8g9PTJSUYpMVS-TuLIMO2s5MekS44zEPPzsK_cvH_AqDPNmrdOu0mw3YF/exec";
 
+/* ======================
+   CHARGER LES DÉPARTS
+====================== */
 function load(){
-  fetch(API_URL)
-    .then(r=>r.json())
+  fetch(API_URL + "?action=list")
+    .then(r => r.json())
     .then(draw)
-    .catch(e=>alert(e));
+    .catch(err => console.error("Erreur API :", err));
 }
 
+/* ======================
+   AFFICHAGE TABLEAU
+====================== */
 function draw(data){
-  let h = `
+  let html = `
     <tr>
-      <th>#</th><th>Numéro</th><th>Destination</th>
-      <th>Départ</th><th>Arrivée</th>
-      <th>Statut</th><th>Actif</th><th>Action</th>
-    </tr>`;
-  data.forEach(d=>{
-    h += `
+      <th>#</th>
+      <th>Numéro</th>
+      <th>Destination</th>
+      <th>Départ</th>
+      <th>Arrivée</th>
+      <th>Statut</th>
+      <th>Actif</th>
+      <th>Action</th>
+    </tr>
+  `;
+
+  data.forEach((r,i)=>{
+    html += `
       <tr>
-        <td>${d.row}</td>
-        <td>${d.numero}</td>
-        <td>${d.destination}</td>
-        <td>${d.depart}</td>
-        <td>${d.arrivee}</td>
-        <td>${d.statut}</td>
-        <td>
-          <input type="checkbox" ${d.actif?"checked":""}
-            onchange="toggle(${d.row},this.checked)">
+        <td>${i+1}</td>
+        <td>${r.numero || ""}</td>
+        <td>${r.destination || ""}</td>
+        <td>${r.depart || ""}</td>
+        <td>${r.arrivee || ""}</td>
+        <td>${r.statut || ""}</td>
+        <td class="actif-btn" onclick="toggle(${r.row}, ${!r.actif})">
+          ${r.actif ? "✅" : "❌"}
         </td>
         <td>
-          <button onclick="del(${d.row})">🗑</button>
+          <button onclick="del(${r.row})">🗑 Supprimer</button>
         </td>
-      </tr>`;
+      </tr>
+    `;
   });
-  tbl.innerHTML = h;
+
+  document.getElementById("tbl").innerHTML = html;
 }
 
+/* ======================
+   AJOUTER
+====================== */
 function add(){
-  fetch(API_URL,{
+  fetch(API_URL, {
     method:"POST",
     body:JSON.stringify({
       action:"add",
-      numero:num.value,
-      destination:dest.value,
-      depart:dep.value,
-      arrivee:arr.value
+      numero:numero.value,
+      destination:destination.value,
+      depart:depart.value,
+      arrivee:arrivee.value
     })
-  }).then(load);
+  }).then(()=>load());
+
+  numero.value="";
+  destination.value="";
+  depart.value="";
+  arrivee.value="";
 }
 
+/* ======================
+   SUPPRIMER
+====================== */
 function del(row){
-  fetch(`${API_URL}?action=delete&row=${row}`).then(load);
+  if(confirm("Supprimer ce départ ?")){
+    fetch(API_URL + "?action=delete&row=" + row)
+      .then(()=>load());
+  }
 }
 
-function toggle(row,actif){
-  fetch(API_URL,{
+/* ======================
+   ACTIVER / DÉSACTIVER
+====================== */
+function toggle(row, actif){
+  fetch(API_URL, {
     method:"POST",
     body:JSON.stringify({
       action:"update",
-      row,
-      actif
+      row:row,
+      actif:actif
     })
-  });
+  }).then(()=>load());
 }
 
+// Chargement initial
 load();
 </script>
 
 </body>
 </html>
+²
