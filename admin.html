@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>OAD – Admin Départs</title>
+<style>
+body{font-family:Arial;background:#0a1f33;color:white;padding:20px}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{border:1px solid #1e405a;padding:8px}
+th{background:#0d304a}
+input,button{padding:6px;margin:4px}
+</style>
+</head>
+<body>
+
+<h1>Admin – Départs</h1>
+
+<button onclick="load()">🔄 Rafraîchir</button>
+
+<table id="tbl"></table>
+
+<h2>Ajouter</h2>
+<input id="num" placeholder="Numéro">
+<input id="dest" placeholder="Destination">
+<input id="dep" type="time">
+<input id="arr" type="time">
+<button onclick="add()">Ajouter</button>
+
+<script>
+const API_URL = "PASTE_ICI_TON_URL_APPS_SCRIPT";
+
+function load(){
+  fetch(API_URL)
+    .then(r=>r.json())
+    .then(draw)
+    .catch(e=>alert(e));
+}
+
+function draw(data){
+  let h = `
+    <tr>
+      <th>#</th><th>Numéro</th><th>Destination</th>
+      <th>Départ</th><th>Arrivée</th>
+      <th>Statut</th><th>Actif</th><th>Action</th>
+    </tr>`;
+  data.forEach(d=>{
+    h += `
+      <tr>
+        <td>${d.row}</td>
+        <td>${d.numero}</td>
+        <td>${d.destination}</td>
+        <td>${d.depart}</td>
+        <td>${d.arrivee}</td>
+        <td>${d.statut}</td>
+        <td>
+          <input type="checkbox" ${d.actif?"checked":""}
+            onchange="toggle(${d.row},this.checked)">
+        </td>
+        <td>
+          <button onclick="del(${d.row})">🗑</button>
+        </td>
+      </tr>`;
+  });
+  tbl.innerHTML = h;
+}
+
+function add(){
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"add",
+      numero:num.value,
+      destination:dest.value,
+      depart:dep.value,
+      arrivee:arr.value
+    })
+  }).then(load);
+}
+
+function del(row){
+  fetch(`${API_URL}?action=delete&row=${row}`).then(load);
+}
+
+function toggle(row,actif){
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"update",
+      row,
+      actif
+    })
+  });
+}
+
+load();
+</script>
+
+</body>
+</html>
