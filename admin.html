@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>OAD – Interface Admin Départs</title>
+<link rel="icon" href="data:,">
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#0a1f33;
+  color:white;
+  padding:20px;
+}
+h1,h2{
+  margin-top:0;
+}
+button{
+  padding:6px 12px;
+  margin:4px;
+  cursor:pointer;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+th,td{
+  border:1px solid #1e405a;
+  padding:8px;
+  text-align:left;
+}
+th{
+  background:#0d304a;
+}
+input{
+  width:100%;
+  padding:6px;
+  margin:5px 0;
+}
+.form{
+  max-width:500px;
+}
+hr{
+  margin:20px 0;
+  border:0;
+  border-top:1px solid #1e405a;
+}
+.actif-btn{
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Interface Admin – Départs</h1>
+
+<button onclick="load()">🔄 Rafraîchir</button>
+
+<table id="tbl"></table>
+
+<hr>
+
+<h2>➕ Ajouter un départ</h2>
+
+<div class="form">
+  <input id="numero" placeholder="Numéro (ex: D20)">
+  <input id="destination" placeholder="Destination">
+  <input id="depart" type="time">
+  <input id="arrivee" type="time">
+  <button onclick="add()">Ajouter</button>
+</div>
+
+<script>
+// 🔴 URL OBLIGATOIRE DE L’API APPS SCRIPT
+const API_URL = "https://script.google.com/macros/s/AKfycbxlCRrFOMA8g9PTJSUYpMVS-TuLIMO2s5MekS44zEPPzsK_cvH_AqDPNmrdOu0mw3YF/exec";
+
+/* ======================
+   CHARGER LES DÉPARTS
+====================== */
+function load(){
+  fetch(API_URL + "?action=list")
+    .then(r => r.json())
+    .then(draw)
+    .catch(err => console.error("Erreur API :", err));
+}
+
+/* ======================
+   AFFICHAGE TABLEAU
+====================== */
+function draw(data){
+  let html = `
+    <tr>
+      <th>#</th>
+      <th>Numéro</th>
+      <th>Destination</th>
+      <th>Départ</th>
+      <th>Arrivée</th>
+      <th>Statut</th>
+      <th>Actif</th>
+      <th>Action</th>
+    </tr>
+  `;
+
+  data.forEach((r,i)=>{
+    html += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${r.numero || ""}</td>
+        <td>${r.destination || ""}</td>
+        <td>${r.depart || ""}</td>
+        <td>${r.arrivee || ""}</td>
+        <td>${r.statut || ""}</td>
+        <td class="actif-btn" onclick="toggle(${r.row}, ${!r.actif})">
+          ${r.actif ? "✅" : "❌"}
+        </td>
+        <td>
+          <button onclick="del(${r.row})">🗑 Supprimer</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("tbl").innerHTML = html;
+}
+
+/* ======================
+   AJOUTER
+====================== */
+function add(){
+  fetch(API_URL, {
+    method:"POST",
+    body:JSON.stringify({
+      action:"add",
+      numero:numero.value,
+      destination:destination.value,
+      depart:depart.value,
+      arrivee:arrivee.value
+    })
+  }).then(()=>load());
+
+  numero.value="";
+  destination.value="";
+  depart.value="";
+  arrivee.value="";
+}
+
+/* ======================
+   SUPPRIMER
+====================== */
+function del(row){
+  if(confirm("Supprimer ce départ ?")){
+    fetch(API_URL + "?action=delete&row=" + row)
+      .then(()=>load());
+  }
+}
+
+/* ======================
+   ACTIVER / DÉSACTIVER
+====================== */
+function toggle(row, actif){
+  fetch(API_URL, {
+    method:"POST",
+    body:JSON.stringify({
+      action:"update",
+      row:row,
+      actif:actif
+    })
+  }).then(()=>load());
+}
+
+// Chargement initial
+load();
+</script>
+
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDOTwwqPIzuo5a9vpjODJyxH86mHYUlEwk",
+    authDomain: "oad-affichage-gare.firebaseapp.com",
+    databaseURL: "https://oad-affichage-gare-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "oad-affichage-gare",
+    storageBucket: "oad-affichage-gare.firebasestorage.app",
+    messagingSenderId: "530244759514",
+    appId: "1:530244759514:web:e51a1ffa08c4c4c0cfdae3"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
+  
+</body>
+</html>
+²
