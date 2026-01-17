@@ -300,41 +300,44 @@ if (media.toLowerCase().endsWith(".mp4")) {
   pubVideo.currentTime = 0;
   pubVideo.style.display = "block";
 
-  let videoSafetyTimer = null;
+  let safetyTimer = null;
 
   pubVideo.onloadedmetadata = () => {
-    const duration = pubVideo.duration;
-    const safeDuration = isFinite(duration)
-      ? Math.min(duration * 1000 + 500, VIDEO_MAX_DURATION)
+    const duration = isFinite(pubVideo.duration)
+      ? Math.min(pubVideo.duration * 1000 + 500, VIDEO_MAX_DURATION)
       : VIDEO_MAX_DURATION;
 
-    videoSafetyTimer = setTimeout(() => {
+    safetyTimer = setTimeout(() => {
       pubVideo.pause();
       isVideoPlaying = false;
       rotatePub();
-    }, safeDuration);
+    }, duration);
   };
 
-  pubVideo.play().catch(() => {
-    clearTimeout(videoSafetyTimer);
-    isVideoPlaying = false;
-    rotatePub();
-  });
+  const playPromise = pubVideo.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {
+      clearTimeout(safetyTimer);
+      isVideoPlaying = false;
+      rotatePub();
+    });
+  }
 
   pubVideo.onended = () => {
-    clearTimeout(videoSafetyTimer);
+    clearTimeout(safetyTimer);
     isVideoPlaying = false;
     rotatePub();
   };
 
   pubVideo.onerror = () => {
-    clearTimeout(videoSafetyTimer);
+    clearTimeout(safetyTimer);
     isVideoPlaying = false;
     rotatePub();
   };
 
   return;
 }
+
 
   pubImg1.src = media;
   pubImg1.style.display = "block";
