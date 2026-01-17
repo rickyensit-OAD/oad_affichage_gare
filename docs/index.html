@@ -294,27 +294,33 @@ let isVideoPlaying = false;
 function rotatePub() {
   if (!pubItems.length || isVideoPlaying) return;
 
-  const media = pubItems[pubIndex % pubItems.length];
-  pubIndex++;
+  const media = pubItems[pubIndex];
+  pubIndex = (pubIndex + 1) % pubItems.length; // 🔁 boucle infinie
 
+  // reset affichage
   pubImg1.style.display = "none";
   pubImg2.style.display = "none";
   pubVideo.style.display = "none";
   pubVideo.pause();
+  pubVideo.onended = null;
 
-  if (media.endsWith(".mp4")) {
+  // 🎥 VIDÉO
+  if (media.toLowerCase().endsWith(".mp4")) {
     isVideoPlaying = true;
     pubVideo.src = media;
     pubVideo.currentTime = 0;
     pubVideo.style.display = "block";
-    pubVideo.play().catch(()=>{});
+
+    pubVideo.play().catch(() => {});
+
     pubVideo.onended = () => {
       isVideoPlaying = false;
-      rotatePub();
+      rotatePub(); // ▶️ enchaîne proprement
     };
     return;
   }
 
+  // 🖼️ IMAGE
   pubImg1.src = media;
   pubImg1.style.display = "block";
 }
