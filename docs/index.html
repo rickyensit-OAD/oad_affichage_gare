@@ -293,14 +293,48 @@ function rotatePub() {
   pubVideo.onended = null;
   clearTimeout(pubTimer);
 
-  if (media.toLowerCase().endsWith(".mp4")) {
-    pubVideo.src = media;
-    pubVideo.currentTime = 0;
-    pubVideo.style.display = "block";
-    pubVideo.play().catch(()=>{});
-    pubVideo.onended = rotatePub;
-    return;
-  }
+if (media.toLowerCase().endsWith(".mp4")) {
+  isVideoPlaying = true;
+
+  pubVideo.src = media;
+  pubVideo.currentTime = 0;
+  pubVideo.style.display = "block";
+
+  let videoSafetyTimer = null;
+
+  pubVideo.onloadedmetadata = () => {
+    const duration = pubVideo.duration;
+    const safeDuration = isFinite(duration)
+      ? Math.min(duration * 1000 + 500, VIDEO_MAX_DURATION)
+      : VIDEO_MAX_DURATION;
+
+    videoSafetyTimer = setTimeout(() => {
+      pubVideo.pause();
+      isVideoPlaying = false;
+      rotatePub();
+    }, safeDuration);
+  };
+
+  pubVideo.play().catch(() => {
+    clearTimeout(videoSafetyTimer);
+    isVideoPlaying = false;
+    rotatePub();
+  });
+
+  pubVideo.onended = () => {
+    clearTimeout(videoSafetyTimer);
+    isVideoPlaying = false;
+    rotatePub();
+  };
+
+  pubVideo.onerror = () => {
+    clearTimeout(videoSafetyTimer);
+    isVideoPlaying = false;
+    rotatePub();
+  };
+
+  return;
+}
 
   pubImg1.src = media;
   pubImg1.style.display = "block";
