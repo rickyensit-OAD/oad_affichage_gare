@@ -9,7 +9,7 @@
 body {
   margin: 0;
   background: #0a1f33;
-  font-family: "Segoe UI", Arial, sans-serif;  
+  font-family: "Segoe UI", Arial, sans-serif;
   color: white;
   overflow: hidden;
 }
@@ -24,7 +24,6 @@ header {
   border-bottom: 0.4vh solid #00c8ff;
 }
 
-/* ===== HEADER LEFT ===== */
 .header-left {
   display: flex;
   align-items: center;
@@ -41,7 +40,6 @@ header h1 {
   font-size: 3vw;
 }
 
-/* ===== HEADER RIGHT ===== */
 .header-right {
   text-align: right;
 }
@@ -70,7 +68,6 @@ header h1 {
   flex-direction: column;
 }
 
-/* ===== TABLE ===== */
 .table-header table,
 .table-body table {
   width: 100%;
@@ -78,7 +75,7 @@ header h1 {
   font-size: 1.8vw;
 }
 
-/* ===== ALIGNEMENT COLONNES ===== */
+/* ===== COL WIDTH ===== */
 colgroup col:nth-child(1) { width: 15%; }
 colgroup col:nth-child(2) { width: 30%; }
 colgroup col:nth-child(3) { width: 15%; }
@@ -93,7 +90,7 @@ colgroup col:nth-child(5) { width: 25%; }
   text-align: left;
 }
 
-/* ===== BODY SCROLL ===== */
+/* ===== BODY ===== */
 .table-body {
   flex: 1;
   overflow: hidden;
@@ -101,17 +98,16 @@ colgroup col:nth-child(5) { width: 25%; }
 
 .table-body td {
   padding: 1.2vh 1vw;
-  line-height: 1.4;
   border-bottom: 1px solid #1e405a;
 }
 
-/* ===== STATUTS ===== */
+/* ===== STATUT ===== */
 .statut-ok { color: #4CAF50; font-weight: bold; }
 .statut-embarquement { color: #FFC107; font-weight: bold; }
 .statut-retard { color: #F44336; font-weight: bold; }
 .statut-parti { color: #64B5F6; font-weight: bold; }
 
-/* ===== COLONNE NUMÉRO (numéro + logo) ===== */
+/* ===== NUMERO + LOGO ===== */
 .table-body td:nth-child(1) {
   background: #0d2538;
   border-radius: 0.3vw;
@@ -126,7 +122,6 @@ colgroup col:nth-child(5) { width: 25%; }
 .line-number {
   font-size: 1.8vw;
   font-weight: 800;
-  color: #eaeaea;
   min-width: 4vw;
   text-align: right;
 }
@@ -151,7 +146,7 @@ colgroup col:nth-child(5) { width: 25%; }
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;   /* ✅ AU LIEU DE contain */
+  object-fit: cover; /* plein écran */
   background: black;
   display: none;
 }
@@ -181,13 +176,12 @@ colgroup col:nth-child(5) { width: 25%; }
   to { transform: translateX(-100%); }
 }
 
-/* ===== DESTINATION STYLE ===== */
+/* ===== DESTINATION ===== */
 .table-body tr:nth-child(odd) td:nth-child(2) {
   background-color: #1e405a;
 }
 
 .table-body td:nth-child(2) {
-  color: #ffffff;
   font-weight: 600;
   padding-left: 1.5vw;
 }
@@ -198,10 +192,9 @@ colgroup col:nth-child(5) { width: 25%; }
 
 <header>
   <div class="header-left">
-    <img src="https://imgur.com/z2Eg5pp.png" alt="OAD Logo">
+    <img src="https://imgur.com/z2Eg5pp.png">
     <h1>Départs – Gare OAD – Abidjan</h1>
   </div>
-
   <div class="header-right">
     <div id="clock">--:--</div>
     <div id="date"></div>
@@ -209,7 +202,6 @@ colgroup col:nth-child(5) { width: 25%; }
 </header>
 
 <div class="main">
-
   <div class="table-zone">
     <div class="table-header">
       <table>
@@ -236,10 +228,8 @@ colgroup col:nth-child(5) { width: 25%; }
 
   <div class="pub">
     <img id="pubImg1">
-    <img id="pubImg2">
-    <video id="pubVideo" muted playsinline preload="auto"></video>
+    <video id="pubVideo" muted playsinline></video>
   </div>
-
 </div>
 
 <div class="ticker" id="ticker">
@@ -247,16 +237,16 @@ colgroup col:nth-child(5) { width: 25%; }
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycby21m6B1gyF6-6PJdUl0XqidQlT73SGoh4P7ZpJxfw-MEVpdKfabIES5mI8awFtqOkH/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz9sLPncRN3NVYTsZAcg3sNJCqyvwB02appfjPx0TPMjSpai0Ssjw1dzdbZ3ABq8_T-/exec";
 
-/* ===== HORLOGE + DATE ===== */
+/* ===== CLOCK ===== */
 setInterval(() => {
   const now = new Date();
   clock.innerText = now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
   date.innerText = now.toLocaleDateString("fr-FR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
 }, 1000);
 
-/* ===== FORMAT HEURE ===== */
+/* ===== FORMAT ===== */
 function formatHeure(v) {
   if (!v) return "--:--";
   const d = new Date(v);
@@ -265,20 +255,18 @@ function formatHeure(v) {
 
 /* ===== STATUT ===== */
 function computeStatut(depart, manuel) {
-  if (manuel && manuel.toLowerCase().trim() === "retardé") return " ⚠️ Retardé";
+  if (manuel && manuel.toLowerCase().includes("retard")) return " ⚠️ Retardé";
   if (!depart) return "";
   const d = new Date(depart);
-  if (isNaN(d)) return "";
   const now = new Date();
-  const depToday = new Date(now.getFullYear(),now.getMonth(),now.getDate(),d.getHours(),d.getMinutes());
-  const diff = (now - depToday) / 60000;
+  const dep = new Date(now.getFullYear(),now.getMonth(),now.getDate(),d.getHours(),d.getMinutes());
+  const diff = (now - dep) / 60000;
   if (diff < 0) return " ⏰ À l’heure";
   if (diff < 20) return " 🚌 Embarquement";
   return " ➡️ Parti";
 }
 
 function getStatutClass(s) {
-  if (!s) return "";
   if (s.includes("À l’heure")) return "statut-ok";
   if (s.includes("Embarquement")) return "statut-embarquement";
   if (s.includes("Retardé")) return "statut-retard";
@@ -286,43 +274,37 @@ function getStatutClass(s) {
   return "";
 }
 
-/* ===== PUB ROTATION ===== */
+/* ===== PUB ENGINE (STABLE) ===== */
 let pubItems = [];
 let pubIndex = 0;
-let isVideoPlaying = false;
+let pubTimer = null;
+const IMAGE_DURATION = 8000;
 
 function rotatePub() {
-  if (!pubItems.length || isVideoPlaying) return;
+  if (!pubItems.length) return;
+  if (pubIndex >= pubItems.length) pubIndex = 0;
 
   const media = pubItems[pubIndex];
-  pubIndex = (pubIndex + 1) % pubItems.length; // 🔁 boucle infinie
+  pubIndex++;
 
-  // reset affichage
   pubImg1.style.display = "none";
-  pubImg2.style.display = "none";
   pubVideo.style.display = "none";
   pubVideo.pause();
   pubVideo.onended = null;
+  clearTimeout(pubTimer);
 
-  // 🎥 VIDÉO
   if (media.toLowerCase().endsWith(".mp4")) {
-    isVideoPlaying = true;
     pubVideo.src = media;
     pubVideo.currentTime = 0;
     pubVideo.style.display = "block";
-
-    pubVideo.play().catch(() => {});
-
-    pubVideo.onended = () => {
-      isVideoPlaying = false;
-      rotatePub(); // ▶️ enchaîne proprement
-    };
+    pubVideo.play().catch(()=>{});
+    pubVideo.onended = rotatePub;
     return;
   }
 
-  // 🖼️ IMAGE
   pubImg1.src = media;
   pubImg1.style.display = "block";
+  pubTimer = setTimeout(rotatePub, IMAGE_DURATION);
 }
 
 /* ===== LOAD DATA ===== */
@@ -342,29 +324,28 @@ async function loadData() {
         <td>
           <div class="line-cell">
             <span class="line-number">${r.numero}</span>
-            <img class="line-logo" src="${r.logo || 'https://via.placeholder.com/120x60?text=LOGO'}" alt="Logo compagnie">
+            <img class="line-logo" src="${r.logo || ''}">
           </div>
         </td>
         <td>${r.destination}</td>
         <td>${formatHeure(r.depart)}</td>
         <td>${formatHeure(r.arrivee)}</td>
         <td class="${getStatutClass(statut)}">${statut}</td>
-      </tr>
-    `;
+      </tr>`;
 
-    if (r.puburl) {
-      r.puburl.split(",").forEach(u=>{
-        if(u.trim().startsWith("http")) pubItems.push(u.trim());
-      });
-    }
-
-    if (r.annonces) {
-      r.annonces.split("|||").forEach(a=>annonces.push(a.trim()));
-    }
+    if (r.puburl) r.puburl.split(",").forEach(u => pubItems.push(u.trim()));
+    if (r.annonces) r.annonces.split("|||").forEach(a => a.trim() && annonces.push(a.trim()));
   });
+
+  pubItems = [...new Set(pubItems)];
 
   ticker.style.display = annonces.length ? "flex" : "none";
   tickerText.innerText = annonces.join("   |||   ");
+
+  if (pubItems.length) {
+    pubIndex = 0;
+    rotatePub();
+  }
 }
 
 /* ===== SCROLL TABLE ===== */
@@ -373,15 +354,14 @@ setInterval(() => {
   const c = tableBodyContainer;
   const max = c.scrollHeight - c.clientHeight;
   if (max <= 0) return;
-  pos += dir * 0.4;   /* ✅ CORRECTION ICI */
+  pos += dir * 0.4;
   if (pos >= max || pos <= 0) dir *= -1;
   c.scrollTop = pos;
 }, 30);
 
 /* ===== INIT ===== */
 loadData();
-setInterval(loadData,30000);
-setInterval(rotatePub,8000);
+setInterval(loadData, 30000);
 </script>
 
 </body>
